@@ -63,6 +63,8 @@
 				'<div>Symbole <select id=selSprite ></select></div>' +
 				'<p><button onclick=setControlsFirstPerson(); >commandes de premier personne</button> ' +
 				'<button onclick=setControlsOrbit(); >commandes d\'Orbit</button></p>' +
+				'<button onclick=plusProches()>Les 50 étoiles les plus proches</button>'+
+				'<button onclick=plusLumineuses()>Les 50 étoiles les plus lumineuses</button>'+
 				'<p><input type=checkbox id=chkFreeze > Stopper la caméra<br>' +
 				'<div id=msg1 >Loading the data for 119,614 stars...</div>';
 
@@ -191,7 +193,7 @@
 			if ( xmlHttp.readyState === 4 ) {
 				text = xmlHttp.responseText;
 				stars = text.split( /\r\n|\n/ );
-
+				// console.log('Stars'+stars)
 				drawStars();
 
 				msg1.innerHTML = 'cliquer sur une étoile pour afficher ses informations<br><br>demandes de données: ' + count++;
@@ -218,11 +220,10 @@
 
 			positions = new Float32Array( particles * 3 );
 			colors = new Float32Array( particles * 3 );
-
 			color = new THREE.Color();
 
 			for ( var i = 0, j = 1; i < positions.length; i += 3 ) {
-
+	
 				star = stars[ j++ ].split( ',' );
 
 				var x = parseFloat( star[ 17 ] );
@@ -260,6 +261,143 @@
 			scene.add( particleSystem );
 			scene.add( placards );
 
+		}
+
+		function plusProches(){
+			scene.remove( particleSystem );
+			scene.remove( placards );
+
+			placards = new THREE.Object3D();
+
+			var particles = stars.length - 2;
+
+			geometry = new THREE.BufferGeometry();
+
+			positions = new Float32Array( particles * 3 );
+			colors = new Float32Array( particles * 3 );
+
+			color = new THREE.Color();
+			let compte=0;
+			let starTab=[]
+
+
+			stars.sort(function(a,b){
+				return b[9]-a[9]
+			});
+			// console.log("################ STAR-TAB ##################"+starTab)
+			for ( var i = 0, j = 1; i < positions.length; i += 3 ) {
+				
+				star = stars[ j++ ].split( ',' );
+				// console.log("STARS 9========>"+star[9])
+				
+				if(compte<=50&&(star[9]*3.262<50||star[9]==0)){
+					
+					// console.log("STARS 9*3.262========>"+star[9]*3.262)
+					var x = parseFloat( star[ 17 ] );
+					var y = parseFloat( star[ 18 ] );
+					var z = parseFloat( star[ 19 ] );
+
+					positions[ i ] = x;
+					positions[ i + 1 ] = y;
+					positions[ i + 2 ] = z;
+
+					color.set( colorFromLuminosity( star[ 33 ] ) );
+
+					colors[ i ] = color.r;
+					colors[ i + 1 ] = color.g;
+					colors[ i + 2 ] = color.b;
+
+					if ( star[ 6 ] ) {
+
+						drawPlacard( star[ 6 ], 0.01, '#0f7', x, y + 0.75, z );
+
+					}
+					compte++
+				}
+
+
+				// TBD: size, alpha etc
+
+			}
+			
+			geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+			geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+
+			geometry.computeBoundingSphere();
+
+			var material = new THREE.PointCloudMaterial( { map: texture, vertexColors: THREE.VertexColors, alphaTest: .1 } );
+
+			particleSystem = new THREE.PointCloud( geometry, material );
+			scene.add( particleSystem );
+			scene.add( placards );
+		}
+
+		function plusLumineuses(){
+			scene.remove( particleSystem );
+			scene.remove( placards );
+
+			placards = new THREE.Object3D();
+
+			var particles = stars.length - 2;
+
+			geometry = new THREE.BufferGeometry();
+
+			positions = new Float32Array( particles * 3 );
+			colors = new Float32Array( particles * 3 );
+
+			color = new THREE.Color();
+			let compte1=0;
+
+
+			stars.sort(function(a,b){
+				return a[33]-b[33]
+			});
+			// console.log("################ STAR-TAB ##################"+stars[119614].split(',')[33])
+			for ( var i = 0, j = 1; i < positions.length; i += 3 ) {
+				
+				star = stars[ j++ ].split( ',' );
+				// console.log("STARS 9========>"+star[9])
+				
+				if(compte1<=50&&(parseFloat(star[33])>2||star[9]==0)){
+					
+					// console.log("STARS 9*3.262========>"+star[9]*3.262)
+					var x = parseFloat( star[ 17 ] );
+					var y = parseFloat( star[ 18 ] );
+					var z = parseFloat( star[ 19 ] );
+
+					positions[ i ] = x;
+					positions[ i + 1 ] = y;
+					positions[ i + 2 ] = z;
+
+					color.set( colorFromLuminosity( star[ 33 ] ) );
+
+					colors[ i ] = color.r;
+					colors[ i + 1 ] = color.g;
+					colors[ i + 2 ] = color.b;
+
+					if ( star[ 6 ] ) {
+
+						drawPlacard( star[ 6 ], 0.01, '#0f7', x, y + 0.75, z );
+
+					} 	
+					compte1++
+				}
+
+
+				// TBD: size, alpha etc
+
+			}
+			
+			geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+			geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+
+			geometry.computeBoundingSphere();
+
+			var material = new THREE.PointCloudMaterial( { map: texture, vertexColors: THREE.VertexColors, alphaTest: .1 } );
+
+			particleSystem = new THREE.PointCloud( geometry, material );
+			scene.add( particleSystem );
+			scene.add( placards );
 		}
 
 		function colorFromLuminosity( lum ) {
